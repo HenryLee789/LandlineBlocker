@@ -38,6 +38,13 @@ final class NumberParserTests: XCTestCase {
         assertSingleNormalized("（０２１）５４０４ １５７９", expected: "862154041579")
     }
 
+    func testAnyZeroPrefixedPhoneNumberIsParsedForBlocking() {
+        assertSingleNormalized("09522 127", expected: "869522127")
+        assertSingleNormalized("09999-1234-5678", expected: "86999912345678")
+        assertSingleNormalized("+86 09522 127", expected: "869522127")
+        assertSingleNormalized("来电 0 9522 127", expected: "869522127")
+    }
+
     func testSpacedMobileSkippedByDefault() {
         let candidates = NumberParser.extractCandidates(from: "156 1781 2630", includeMobiles: false)
         XCTAssertEqual(candidates.count, 1)

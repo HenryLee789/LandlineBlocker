@@ -68,13 +68,22 @@ public enum NumberParser {
     private static let area3Pattern = "(?:[3-9]\\d{2})"
     private static let separatorPattern = "[\\s\\-.]*"
     private static let localPattern = "\\d{3,4}[\\s\\-.]*\\d{3,4}"
+    private static let zeroPrefixedPhonePattern = "0(?:\(separatorPattern)\\d){6,17}"
 
     private static var landlineWithCountryPattern: String {
         "(?<!\\d)\\+?86\(separatorPattern)[（(]?0?(?:\(area2Pattern)|\(area3Pattern))[）)]?\(separatorPattern)\(localPattern)(?!\\d)"
     }
 
+    private static var zeroPrefixedWithCountryPattern: String {
+        "(?<!\\d)\\+?86\(separatorPattern)[（(]?\(zeroPrefixedPhonePattern)[）)]?(?!\\d)"
+    }
+
     private static var domesticLandlinePattern: String {
         "(?<!\\d)[（(]?0(?:\(area2Pattern)|\(area3Pattern))[）)]?\(separatorPattern)\(localPattern)(?!\\d)"
+    }
+
+    private static var domesticZeroPrefixedPattern: String {
+        "(?<!\\d)[（(]?\(zeroPrefixedPhonePattern)[）)]?(?!\\d)"
     }
 
     private static var mobileWithCountryPattern: String {
@@ -184,8 +193,10 @@ public enum NumberParser {
         let patterns: [(pattern: String, priority: Int)] = [
             (landlineWithCountryPattern, 0),
             (domesticLandlinePattern, 1),
-            (mobileWithCountryPattern, 2),
-            (domesticMobilePattern, 3)
+            (zeroPrefixedWithCountryPattern, 2),
+            (domesticZeroPrefixedPattern, 3),
+            (mobileWithCountryPattern, 4),
+            (domesticMobilePattern, 5)
         ]
 
         var matches: [CandidateMatch] = []
@@ -230,12 +241,17 @@ public enum NumberParser {
 
         if digits.hasPrefix("86") {
             var national = String(digits.dropFirst(2))
-            if national.hasPrefix("0") {
+            let hadTrunkPrefix = national.hasPrefix("0")
+            if hadTrunkPrefix {
                 national = String(national.dropFirst())
             }
 
             if isLandlineNationalNumber(national) {
                 return ParsedNumber(raw: raw, normalized: "86" + national, kind: .landline, isValid: true, reason: "已识别为大陆固话")
+            }
+
+            if hadTrunkPrefix, isZeroPrefixedPhoneNationalNumber(national) {
+                return ParsedNumber(raw: raw, normalized: "86" + national, kind: .landline, isValid: true, reason: "已识别为 0 开头电话")
             }
 
             if isMobileNationalNumber(national) {
@@ -253,6 +269,11 @@ public enum NumberParser {
             if isLandlineNationalNumber(national) {
                 return ParsedNumber(raw: raw, normalized: "86" + national, kind: .landline, isValid: true, reason: "已识别为大陆固话")
             }
+
+            if isZeroPrefixedPhoneNationalNumber(national) {
+                return ParsedNumber(raw: raw, normalized: "86" + national, kind: .landline, isValid: true, reason: "已识别为 0 开头电话")
+            }
+
             return ParsedNumber(raw: raw, normalized: "", kind: .invalid, isValid: false, reason: "大陆固话格式不支持")
         }
 
@@ -291,6 +312,10 @@ public enum NumberParser {
         guard digits.count == 11, digits.first == "1" else { return false }
         guard let second = digits.dropFirst().first else { return false }
         return isDigitBetweenThreeAndNine(second)
+    }
+
+    private static func isZeroPrefixedPhoneNationalNumber(_ digits: String) -> Bool {
+        digits.count >= 6 && digits.count <= 17 && containsOnlyASCIIDigits(digits)
     }
 
     private static func containsPhoneLikeDigits(_ text: String) -> Bool {
