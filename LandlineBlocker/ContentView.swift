@@ -15,6 +15,13 @@ struct ContentView: View {
                     actionSection
                     blacklistSection
                     guideSection
+                    #if DEBUG
+                    DebugDiagnosticsView(
+                        recordsCount: viewModel.records.count,
+                        extensionStatus: viewModel.extensionStatus,
+                        lastReloadResult: viewModel.lastReloadResult
+                    )
+                    #endif
                 }
                 .padding()
             }

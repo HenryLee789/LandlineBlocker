@@ -14,6 +14,7 @@ final class BlacklistViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var extensionStatus: CallDirectoryExtensionStatus = .unknown
     @Published var exportFile: ExportFile?
+    @Published var lastReloadResult = "尚未刷新"
 
     private let ocrService = OCRService()
 
@@ -88,11 +89,14 @@ final class BlacklistViewModel: ObservableObject {
             defer { isProcessing = false }
 
             await refreshExtensionStatus()
+            lastReloadResult = "刷新中..."
             let result = await CallDirectoryReloader.shared.reloadExtension()
             switch result {
             case .success:
+                lastReloadResult = "拦截库刷新成功"
                 statusMessage = "拦截库刷新成功"
             case .failure(let failure):
+                lastReloadResult = "刷新失败：\(failure.message)"
                 statusMessage = "刷新失败：\(failure.message)"
             }
             await refreshExtensionStatus()
