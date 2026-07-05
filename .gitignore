@@ -1,0 +1,27 @@
+# Xcode
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+
+# Swift Package / Xcode
+.swiftpm/
+.build/
+
+# Archives / signing
+*.ipa
+*.xcarchive
+*.mobileprovision
+*.p12
+*.cer
+*.key
+
+# Temporary
+*.tmp
+*.log
+
+# macOS
+.AppleDouble
+.LSOverride
